@@ -1,4 +1,5 @@
-﻿using System.Web.Http;
+﻿using System.Configuration;
+using System.Web.Http;
 using System.Web.Http.Cors;
 
 namespace API
@@ -20,7 +21,7 @@ namespace API
 
             config.EnableCors();
 
-            config.EnableCors(new EnableCorsAttribute("http://localhost:7777", "*", "POST,GET")
+            config.EnableCors(new EnableCorsAttribute(ConfigurationManager.ConnectionStrings["ACAO"].ConnectionString, "*", "POST,GET")
             {
                 SupportsCredentials = true,
                 PreflightMaxAge = 60 * 60
