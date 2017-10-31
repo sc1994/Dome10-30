@@ -31,6 +31,10 @@ namespace API.Controllers
         [HttpPost]
         public IHttpActionResult Login(UserParameter model)
         {
+            if (string.IsNullOrEmpty(model.Md5) || string.IsNullOrEmpty(model.UName) || string.IsNullOrEmpty(model.UPassword))
+            {
+                return Content(HttpStatusCode.InternalServerError, "缺少比要字段");
+            }
             var cookie = HttpContext.Current.Request.Cookies[_token];
             if (cookie == null)
             {
