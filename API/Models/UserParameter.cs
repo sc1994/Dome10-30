@@ -5,5 +5,7 @@
         public string Md5 { get; set; } = string.Empty;
 
         public static readonly string UserCookie = "UserCookie";
+
+        public static readonly string UserRedis = "UserRedis";
     }
 }

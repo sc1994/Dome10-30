@@ -304,7 +304,7 @@ namespace Common
         /// <returns></returns>
         public int Update(T model)
         {
-            if (IsNullOrEmpty(IdentityKey)) throw new Exception(GetDescription(ErrorEnum.E1000));
+            if (IsNullOrEmpty(IdentityKey)) throw new Exception(ErrorEnum.E1000.GetDescription());
             SqlString = new StringBuilder();
             SqlString.Append($" UPDATE {_tableName} SET ");
             var properties = model.GetType().GetProperties();
@@ -363,14 +363,14 @@ namespace Common
             var sp = GetUpdateString();
             if (IsNullOrEmpty(sp.SqlStr))
             {
-                throw new Exception(GetDescription(ErrorEnum.E1002));
+                throw new Exception(ErrorEnum.E1002.GetDescription());
             }
             SqlString.Append($"{sp.SqlStr}");
             para.AddDynamicParams(sp.Parameter);
             sp = GetWhereString();
             if (IsNullOrEmpty(sp.SqlStr))
             {
-                throw new Exception(GetDescription(ErrorEnum.E1001));
+                throw new Exception(ErrorEnum.E1001.GetDescription());
             }
             SqlString.Append(" WHERE 1=1 " + sp.SqlStr);
             para.AddDynamicParams(sp.Parameter);
@@ -386,7 +386,7 @@ namespace Common
         /// <returns></returns>
         public int Delete(string where)
         {
-            if (IsNullOrEmpty(where)) throw new Exception(GetDescription(ErrorEnum.E1001));
+            if (IsNullOrEmpty(where)) throw new Exception(ErrorEnum.E1001.GetDescription());
             SqlString = new StringBuilder();
             SqlString.Append($"DELETE {_tableName} WHERE 1=1 {where} ");
             return DbClient.Excute(SqlString.ToString());
@@ -399,7 +399,7 @@ namespace Common
         /// <returns></returns>
         public int DeleteByPrimaryKey(object id)
         {
-            if (IsNullOrEmpty(PrimaryKey)) throw new Exception(GetDescription(ErrorEnum.E1000));
+            if (IsNullOrEmpty(PrimaryKey)) throw new Exception(ErrorEnum.E1000.GetDescription());
             SqlString = new StringBuilder();
             SqlString.Append($"DELETE {_tableName} WHERE {PrimaryKey} = @key ");
             return DbClient.Excute(SqlString.ToString(), new { key = id });
@@ -411,7 +411,7 @@ namespace Common
         /// <returns></returns>
         public int Delete()
         {
-            if (!_whereList.Any() && !_whereStr.Any()) throw new Exception(GetDescription(ErrorEnum.E1001));
+            if (!_whereList.Any() && !_whereStr.Any()) throw new Exception(ErrorEnum.E1001.GetDescription());
 
             SqlString = new StringBuilder();
             var sq = GetWhereString();
@@ -532,7 +532,7 @@ namespace Common
             if (isPage)
             {
                 var pageSortField = IsNullOrEmpty(PageConfig.PageSortSql)
-                    ? $" {PageConfig.PageSortField} {GetDescription(PageConfig.SortEnum)} "
+                    ? $" {PageConfig.PageSortField} {PageConfig.SortEnum.GetDescription()} "
                     : PageConfig.PageSortSql;
 
                 SqlString.Append("SELECT * FROM (SELECT ROW_NUMBER() OVER ( ORDER BY " +
@@ -550,7 +550,7 @@ namespace Common
             {
                 if (IsNullOrEmpty(Alia.Trim()))
                 {
-                    throw new Exception(GetDescription(ErrorEnum.E1003));
+                    throw new Exception(ErrorEnum.E1003.GetDescription());
                 }
                 SqlString.Append(join);
                 totlaSql += join;
@@ -717,20 +717,6 @@ namespace Common
             return sbStr.Remove(sbStr.Length - number, number);
         }
 
-        private string GetDescription(Enum enumItemName)
-        {
-            var fi = enumItemName.GetType().GetField(enumItemName.ToString());
-
-            var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(
-                typeof(DescriptionAttribute), false);
-
-            if (attributes.Length > 0)
-            {
-                return attributes[0].Description;
-            }
-            return enumItemName.ToString();
-        }
-
         private SqlAndParameter GetUpdateString()
         {
             var re = new SqlAndParameter();
@@ -757,31 +743,31 @@ namespace Common
             {
                 if (where.Relation == RelationEnum.In)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} IN (@{where.Field.Replace(".", "_")}{count}) ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} IN (@{where.Field.Replace(".", "_")}{count}) ";
                 }
                 else if (where.Relation == RelationEnum.NotIn)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} NOT IN (@{where.Field.Replace(".", "_")}{count}) ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} NOT IN (@{where.Field.Replace(".", "_")}{count}) ";
                 }
                 else if (where.Relation == RelationEnum.IsNotNull || where.Relation == RelationEnum.IsNull)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} {GetDescription(where.Relation)} ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} {where.Relation.GetDescription()} ";
                 }
                 else if (where.Relation == RelationEnum.Like)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} LIKE '%'+@{where.Field.Replace(".", "_")}{count}+'%' ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} LIKE '%'+@{where.Field.Replace(".", "_")}{count}+'%' ";
                 }
                 else if (where.Relation == RelationEnum.LeftLike)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} LIKE '%'+@{where.Field.Replace(".", "_")}{count} ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} LIKE '%'+@{where.Field.Replace(".", "_")}{count} ";
                 }
                 else if (where.Relation == RelationEnum.RightLike)
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} LIKE @{where.Field.Replace(".", "_")}{count}+'%' ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} LIKE @{where.Field.Replace(".", "_")}{count}+'%' ";
                 }
                 else
                 {
-                    re.SqlStr += $"{GetDescription(where.Coexist)} {where.Field} {GetDescription(where.Relation)} @{where.Field.Replace(".", "_")}{count} ";
+                    re.SqlStr += $"{where.Coexist.GetDescription()} {where.Field} {where.Relation.GetDescription()} @{where.Field.Replace(".", "_")}{count} ";
                 }
                 re.Parameter.Add($"@{where.Field.Replace(".", "_")}{count}", where.Value);
                 count++;
@@ -805,7 +791,7 @@ namespace Common
             var strSql = _sortList
                 .Aggregate("",
                     (current, sort) =>
-                        current + $"{sort.Key} {GetDescription(sort.Value)},");
+                        current + $"{sort.Key} {sort.Value.GetDescription()},");
             return _sortStr.Aggregate(strSql, (current, sort) => current + $"{sort},").TrimEnd(',');
         }
 
@@ -819,7 +805,7 @@ namespace Common
                 .Aggregate(strSql,
                     (current, join)
                         => current +
-                           $@" {GetDescription(join.RelationJoin)} {ConfigurationManager.ConnectionStrings["DATABASE"].ConnectionString}.dbo.[{join.ThatTable}] 
+                           $@" {join.RelationJoin.GetDescription()} {ConfigurationManager.ConnectionStrings["DATABASE"].ConnectionString}.dbo.[{join.ThatTable}] 
                     {join.ThatAlia} ON {Alia}.{join.RelationField} = {join.ThatAlia}.{join.ThatRelationField} {join.Where}");
             if (_joinStr.Any())
             {
@@ -1053,35 +1039,6 @@ namespace Common
         /// </summary>
         [Description("RIGHT JOIN")]
         RightJoin
-    }
-    #endregion
-
-    #region 错误枚举
-    /// <summary>
-    /// 错误枚举
-    /// </summary>
-    public enum ErrorEnum
-    {
-        /// <summary>
-        /// 当前表结构缺少PrimaryKey
-        /// </summary>
-        [Description("当前表结构缺少PrimaryKey")]
-        E1000,
-        /// <summary>
-        /// 当前操作必须传入条件限制
-        /// </summary>
-        [Description("当前操作必须传入条件限制")]
-        E1001,
-        /// <summary>
-        /// 当前操作必须传入UPDATE字段和值
-        /// </summary>
-        [Description("当前操作必须传入UPDATE字段和值")]
-        E1002,
-        /// <summary>
-        /// 当您尝试 JOIN 时,请先设置 Alia 值
-        /// </summary>
-        [Description("当您尝试 JOIN 时,请先设置 Alia 值")]
-        E1003
     }
     #endregion
 }

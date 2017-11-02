@@ -1,6 +1,7 @@
 ﻿using API.Models;
 using Common;
 using System;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -12,6 +13,11 @@ namespace API.Controllers
     {
         private readonly string _token = "token";
 
+        /// <summary>
+        /// 获取登陆票据
+        /// </summary>
+        /// <returns></returns>
+        [SecurityFilter(Access.Logined)]
         [HttpGet]
         public IHttpActionResult GetToken()
         {
@@ -28,37 +34,46 @@ namespace API.Controllers
             return Content(HttpStatusCode.OK, token);
         }
 
+        /// <summary>
+        /// 登录接口
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [SecurityFilter(Access.Logined)]
         [HttpPost]
         public IHttpActionResult Login(UserParameter model)
         {
             if (string.IsNullOrEmpty(model.Md5) || string.IsNullOrEmpty(model.UName) || string.IsNullOrEmpty(model.UPassword))
             {
-                return Content(HttpStatusCode.InternalServerError, "缺少比要字段");
+                return Content(HttpStatusCode.InternalServerError, ErrorEnum.E1.GetDescription());
             }
             var cookie = HttpContext.Current.Request.Cookies[_token];
             if (cookie == null)
             {
-                return Content(HttpStatusCode.InternalServerError, "Miss Cookie");
+                return Content(HttpStatusCode.InternalServerError, ErrorEnum.E4.GetDescription());
             }
             if (model.Md5 != cookie.Value)
             {
-                return Content(HttpStatusCode.InternalServerError, "Error Token");
+                return Content(HttpStatusCode.InternalServerError, ErrorEnum.E5.GetDescription());
             }
 
             var sh = new SqlHelper<Users>();
             sh.AddWhere("UName", model.UName);
             sh.AddWhere("UPassword", model.UPassword);
             var user = sh.Select().FirstOrDefault();
-            if (user == null) return Content(HttpStatusCode.InternalServerError, "账号名称或者密码错误");
+            if (user == null) return Content(HttpStatusCode.InternalServerError, ErrorEnum.E6.GetDescription());
             cookie.Expires = DateTime.Now.AddHours(-1);
             HttpContext.Current.Response.Cookies.Add(cookie);
             var newCookie = new HttpCookie(UserParameter.UserCookie)
             {
-                Value = user.ToJson(),
-                Expires = DateTime.Now.AddHours(8),
+                Value = user.UID.ToString(),
+                Expires = DateTime.Now.AddSeconds(Convert.ToInt32(ConfigurationManager.ConnectionStrings["LandingTime"].ConnectionString)),
                 Name = UserParameter.UserCookie
             };
             HttpContext.Current.Response.Cookies.Add(newCookie);
+
+            RedisHelper.SetCache(user.UID.ToString(), user, DateTime.Now.AddSeconds(Convert.ToInt32(ConfigurationManager.ConnectionStrings["LandingTime"].ConnectionString)));
+
             return Content(HttpStatusCode.OK, "登陆成功");
         }
     }

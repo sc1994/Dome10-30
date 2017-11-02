@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Security.Cryptography;
@@ -38,6 +39,25 @@ namespace Common
             {
                 return Activator.CreateInstance<T>();
             }
+        }
+
+        /// <summary>
+        /// 获取枚举描述
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public static string GetDescription(this Enum e)
+        {
+            var fi = e.GetType().GetField(e.ToString());
+
+            var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(
+                typeof(DescriptionAttribute), false);
+
+            if (attributes.Length > 0)
+            {
+                return attributes[0].Description;
+            }
+            return e.ToString();
         }
     }
 }

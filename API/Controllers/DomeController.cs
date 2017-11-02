@@ -7,27 +7,35 @@ using Common;
 
 namespace API.Controllers
 {
-    public class DomeController : ApiController
+    public class DomeController : BaseApiController
     {
-        [SecurityFilter]
+        /// <summary>
+        /// 信息查看
+        /// </summary>
+        /// <returns></returns>
+        [SecurityFilter(Access.NeedLogin)]
         [HttpGet]
         public IHttpActionResult Index()
         {
-            var model = HttpContext.Current.Request.Cookies[UserParameter.UserCookie]?.Value.JsonToObject<Users>();
-
-            if (model == null)
-                return Content(HttpStatusCode.InternalServerError, "请求成功,但未取得预期的成果");
+            if (CurrentUser == null)
+            {
+                return Content(HttpStatusCode.InternalServerError, ErrorEnum.E3.GetDescription());
+            }
 
             return Content(HttpStatusCode.OK, new
             {
-                name = model.UName,
-                sex = ((Sex)model.USex).ToString(),
-                phone = model.UPhone,
-                email = model.UEmail
+                name = CurrentUser.UName,
+                sex = ((Sex)CurrentUser.USex).ToString(),
+                phone = CurrentUser.UPhone,
+                email = CurrentUser.UEmail
             });
         }
 
-        [SecurityFilter]
+        /// <summary>
+        /// 登出
+        /// </summary>
+        /// <returns></returns>
+        [SecurityFilter(Access.NeedLogin)]
         [HttpGet]
         public IHttpActionResult Logout()
         {
@@ -36,8 +44,9 @@ namespace API.Controllers
             {
                 cookie.Expires = DateTime.Now.AddDays(-1);
                 HttpContext.Current.Response.Cookies.Add(cookie);
+                RedisHelper.ClearCache(cookie.Value);
             }
-            return Content(HttpStatusCode.OK, "操作成功");
+            return Content(HttpStatusCode.OK, "登出成功");
         }
     }
 }
